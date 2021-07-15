@@ -17,6 +17,7 @@ keypoints:
   - [2.1. Principle of Locality](#21-principle-of-locality)
   - [2.2. Memory Hierarchy](#22-memory-hierarchy)
     - [2.2.1. Registers](#221-registers)
+    - [2.2.2. Local Memory](#222-local-memory)
 
 ## 1. Overview
 
@@ -123,7 +124,8 @@ being held in registers are often frequently accessed by kernels while their lif
 completion of kernel execution.
 
 Using fewer registers within kernels can lead to higher performance resulting from the increased 
-**occupancy** of the thread locks per streaming multiprocessor (SM).
+[**occupancy**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__OCCUPANCY.html#group__CUDART__OCCUPANCY)
+of the thread locks per streaming multiprocessor (SM).
 
 > ## Note:
 > Occupancy is a helpful performance metric which is based on the ideal intention of 
@@ -134,6 +136,34 @@ Using fewer registers within kernels can lead to higher performance resulting fr
 > does not always mean improved performance. We will discuss profiling performance metrics in
 > [here]().
 {: .discussion}
+
+On the other hand, if a kernel attempts to utilize more registers than the limit imposed by the 
+hardware resources, the excess memory would spill over local memory. The **register spill** and 
+[**register pressure**](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#register-pressure)
+should be avoided if possible due to its serious performance consequences. Here, we provide two ways
+to control the number of registers: 1) `-maxrregcount` compiler option, and 2) 
+[`__launch_bounds__()` qualifier method](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#launch-bounds).
+The former approach can be used by simply passing the [`-maxrregcount=N` option](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#options-for-steering-gpu-code-generation-maxrregcount) to the nvcc 
+compiler where `N` denotes the maximum number of registers *used by all kernels*. The latter method uses the 
+`__launch_bounds__()` qualifier method after the kernel declaration specification qualifier in order to provide
+the necessary information to the compiler through its arguments, `maxThreadsPerBlock` and `minBlocksPerMultiProcessor` as
+
+~~~
+__global__ void __launch_bounds__(maxThreadsPerBlock, minBlocksPerMultiprocessor)
+kernel(...) {
+  // kernel body implementation
+}
+~~~
+{: .language-cuda}
+
+Here, `maxThreadsPerBlock` specifies the maximum number of threads per block with which the `kernel()` is launched.
+The `minBlocksPerMultiprocessor` is an optional argument which denotes the desired minimum number of resident thread 
+blocks per SM.
+
+The provided information through `__launch_bounds__()` method take precedence over that provided 
+by the compiler option `-maxrregcount` and in cases where both methods are adopted, the latter is ignored.
+
+#### 2.2.2. Local Memory
 
 
 
