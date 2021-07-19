@@ -7,7 +7,7 @@ questions:
 - "What is the principle of locality and how does it reduce the memory access latency?"
 - "Why is there a memory hierarchy and how is it defined?"
 objectives:
-- "Understanding the CUDA Memory Model and its role in CUDA C/C++ programming."
+- "Understanding the CUDA Memory Model and its role in CUDA C/C++ programming"
 keypoints:
 - "First key point. Brief Answer to questions. (FIXME)"
 ---
@@ -18,6 +18,16 @@ keypoints:
   - [2.2. Memory Hierarchy](#22-memory-hierarchy)
     - [2.2.1. Registers](#221-registers)
     - [2.2.2. Local Memory](#222-local-memory)
+    - [2.2.3. Shared Memory](#223-shared-memory)
+    - [2.2.4. Constant Memory](#224-constant-memory)
+    - [2.2.5. Texture Memory](#225-texture-memory)
+    - [2.2.6. Global Memory](#226-global-memory)
+  - [2.3. Host-Device Memory Management](#23-host-device-memory-management)
+    - [2.3.1. Pinned Memory](#231-pinned-memory)
+    - [2.3.2. Zero-copy Memory](#232-zero-copy-memory)
+    - [2.3.3. Unified Memory](#233-unified-memory)
+- [3. Example: Vector Addition (AXPY)](#3-example-vector-addition-axpy)
+- [4. Example: Matrix Addition](#4-example-matrix-addition)
 
 ## 1. Overview
 
@@ -44,7 +54,6 @@ Before we begin writing code, let us delve into the important aspects of the of 
 in more details.
 
 ## 2. CUDA Memory Model
-
 
 ### 2.1. Principle of Locality
 
@@ -165,7 +174,65 @@ by the compiler option `-maxrregcount` and in cases where both methods are adopt
 
 #### 2.2.2. Local Memory
 
+Kernel variables that cannot fit into registers create a *register pressure* and *spill* into local memory.
+Variables types that are eligible to be stored in local memory are: 1) local arrays with reference indices that
+cannot be inferred at compilation time, and 2) any variable (such as local arrays or structures) that are too large
+to fit in register.
 
+Note that those data that are spilled into the *local* memory reside in the same physical location as *global* memory. 
+Therefore, significant performance degradation is expected as the data access/transfer will now be subjected to the 
+low bandwidth and high latency limitations of the global memory.
+
+> ## Note:
+> The resident data in local memory are cached in each SM's L1 and each device's L2 cache memory spaces for GPUs 
+> with compute capability 2.0 and higher.
+{: .discussion}
+
+#### 2.2.3. Shared Memory
+
+Similar to registers, shared memory is a valuable on-chip programmable memory resource with significantly lower latency 
+and higher bandwidth than those of local/global memory. Since shared memory is distributed among thread 
+blocks and is key for intra-block/inter-thread cooperation, a naive usage of shared memory can limit the number of active
+warps and affect the performance. Furthermore, the lifetime and scope of shared memory is limited by those of kernels and when 
+the thread block finishes its execution, the allocated shared memory for that block is released and becomes available to other
+thread blocks.
+
+In order to create an explicit barrier for synchronization of all threads in the same thread block, CUDA runtime introduces the
+following functionality
+
+~~~
+void __syncthreads();
+~~~
+{: .language-cuda}
+
+which is especially useful for preventing data race [hazards](https://docs.nvidia.com/cuda/cuda-memcheck/index.html#what-are-hazards)
+in parallel applications. Data hazards often happen when multiple threads attempt to access a memory address in an arbitrary order 
+where at least one thread performs a store (or write) operation. Care must be taken with the usage 
+of [`__syncthreads()`](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cooperative-groups) since it can negatively
+affect the performance by stalling the SM, frequently.
+
+
+
+
+#### 2.2.4. Constant Memory
+
+#### 2.2.5. Texture Memory
+
+#### 2.2.6. Global Memory
+
+
+
+### 2.3. Host-Device Memory Management
+
+#### 2.3.1. Pinned Memory
+
+#### 2.3.2. Zero-copy Memory
+
+#### 2.3.3. Unified Memory
+
+## 3. Example: Vector Addition (AXPY)
+
+## 4. Example: Matrix Addition
 
 {% include links.md %}
 
