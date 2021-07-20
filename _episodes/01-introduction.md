@@ -211,10 +211,37 @@ where at least one thread performs a store (or write) operation. Care must be ta
 of [`__syncthreads()`](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cooperative-groups) since it can negatively
 affect the performance by stalling the SM, frequently.
 
+The on-chip memory space and hardware resources used for both L1 cache and shared memory is statically partitioned by default. 
+However, this configuration can be dynamically modified at using the CUDA runtime function [`cudaFuncSetCacheConfig()`](https://docs.nvidia.com/
+cuda/cuda-runtime-api/group__CUDART__EXECUTION.html#group__CUDART__EXECUTION_1g6699ca1943ac2655effa0d571b2f4f15) with the following 
+function signatures
 
+~~~
+__host__ cudaError_t cudaFuncSetCacheConfig(const void* func, enum cudaFuncCache cacheConfig);   // C API
 
+template < class T >
+__host__ cudaError_t cudaFuncSetCacheConfig(T* func, enum cudaFuncCache cacheConfig) [inline]    // C++ API
+~~~
+{: .language-cuda}
+
+The first argument, `func`, denotes the device function symbol and [`cudaFuncCache`](https://docs.nvidia.com/cuda/
+cuda-runtime-api/group__CUDART__TYPES.html) is an `enum` type variable that stands for the CUDA cache configurations 
+and can take the following values
+
+| Cache Configuration       | Value |                     Meaning                      |
+| :------------------------ | :---: | :----------------------------------------------: |
+| cudaFuncCachePreferNone   |   0   |      No preference (default configuration)       |
+| cudaFuncCachePreferShared |   1   | Prefer larger shared memory and smaller L1 cache |
+| cudaFuncCachePreferL1     |   2   | Prefer larger L1 cache and smaller shared memory |
+| cudaFuncCachePreferEqual  |   3   |   Prefer equal size L1 cache and shared memory   |
+
+> ## Note:
+> The `cudaFuncSetCacheConfig()` function does nothing on devices with fixed L1 cache and shared memory sizes.
+{: .discussion}
 
 #### 2.2.4. Constant Memory
+
+
 
 #### 2.2.5. Texture Memory
 
