@@ -191,11 +191,41 @@ low bandwidth and high latency limitations of the global memory.
 #### 2.2.3. Shared Memory
 
 Similar to registers, shared memory is a valuable on-chip programmable memory resource with significantly lower latency 
-and higher bandwidth than those of local/global memory. Since shared memory is distributed among thread 
-blocks and is key for intra-block/inter-thread cooperation, a naive usage of shared memory can limit the number of active
-warps and affect the performance. Furthermore, the lifetime and scope of shared memory is limited by those of kernels and when 
-the thread block finishes its execution, the allocated shared memory for that block is released and becomes available to other
-thread blocks.
+and higher bandwidth than those of local/global memory. The `__shared__` qualifier can be used for explicit shared memory 
+variable declaration. Shared memory can be allocated statically or dynamically and variables can be declared within the 
+global or kernel's local scope. Let us statically allocate the shared memory for a 2-dimensional array of integers
+
+~~~
+__shared__ int array[dimX][dimY];
+~~~
+{: .language-cuda}
+
+where `dimX` and `dimY` are predefined integer variables. If the size of the required shared memory (in this case, 
+`dimX * dimY * sizeof(int)`) is not known at the compilation time, the memory block for the array of variable size 
+can be allocated dynamically using the `extern` keyword
+
+~~~
+extern __shared__ int array[];
+~~~
+{: .language-cuda}
+
+The postponed specification of the desired allocated memory size for the array should now be defined at the run-time
+for each thread as the third argument in the execution configuration (triple angular brackets)
+
+~~~
+kernel<<< numberOfBlocksInGrid, numberOfThreadsinBlock, dimX * dimY * sizeof(int) >>>(array, ...)
+~~~
+{: .language-cuda}
+
+where the desired size should be expressed in bytes, hence the use of [`sizeof()`](https://en.cppreference.com/w/cpp/language/sizeof).
+> ## Note:
+> Only 1-dimensional arrays can be declared dynamically in shared memory.
+{: .discussion}
+
+Since shared memory is distributed among thread blocks and is key for intra-block/inter-thread cooperation, a naive usage 
+of shared memory can limit the number of active warps and affect the performance. Furthermore, the lifetime and scope of 
+shared memory is limited by those of kernels and when the thread block finishes its execution, the allocated shared memory
+for that block is released and becomes available to other thread blocks.
 
 In order to create an explicit barrier for synchronization of all threads in the same thread block, CUDA runtime introduces the
 following functionality
