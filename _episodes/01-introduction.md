@@ -287,13 +287,21 @@ cudaError_t cudaMemcpyToSymbol(const void* symbol, const void* src, size_t count
 Here, `count` bytes from the memory address pointed to by the pointer variable `src` is copied to the memory location
 pointed to by `symbol` residing in the constant or global memory space. The `cudaMemcpyToSymbol()` is 
 [synchronous](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html#api-sync-behavior__memcpy-sync) with
-respect to the host in most cases. Constant memory is cached using a dedicated per-SM constant cache space.
+respect to the host in most cases. Constant memory is cached using a dedicated per-SM constant cache space and is best
+used in uniform read operations where each thread in a warp accesses the same memory address.
 
 #### 2.2.5. Texture Memory
 
-
+Similar to the constant memory, the texture memory is also cached per-SM through read-only cache which supports hardware
+filtering such as performing floating-point interpolation as part of the data load process. Contrary to the constant cache
+where the accessed data is usually small and read uniformly by the threads in a warp, the read-only cache is more suitable
+for the scattered data access on larger data sets. The texture memory is designed to benefit for the 2-dimensional spatial
+locality. Therefore, the best performance can be expected from texture memory when the accessed data is 2-dimensional.
+Note that depending on the application, the expected performance from texture memory might be lower than that of the global
+memory.
 
 #### 2.2.6. Global Memory
+
 
 
 
