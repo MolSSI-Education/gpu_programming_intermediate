@@ -243,14 +243,10 @@ affect the performance by stalling the SM, frequently.
 
 The on-chip memory space and hardware resources used for both L1 cache and shared memory is statically partitioned by default. 
 However, this configuration can be dynamically modified at using the CUDA runtime function [`cudaFuncSetCacheConfig()`](https://docs.nvidia.com/
-cuda/cuda-runtime-api/group__CUDART__EXECUTION.html#group__CUDART__EXECUTION_1g6699ca1943ac2655effa0d571b2f4f15) with the following 
-function signatures
+cuda/cuda-runtime-api/group__CUDART__EXECUTION.html#group__CUDART__EXECUTION_1g6699ca1943ac2655effa0d571b2f4f15)
 
 ~~~
-__host__ cudaError_t cudaFuncSetCacheConfig(const void* func, enum cudaFuncCache cacheConfig);   // C API
-
-template < class T >
-__host__ cudaError_t cudaFuncSetCacheConfig(T* func, enum cudaFuncCache cacheConfig) [inline]    // C++ API
+cudaError_t cudaFuncSetCacheConfig(const void* func, enum cudaFuncCache cacheConfig);
 ~~~
 {: .language-cuda}
 
@@ -271,9 +267,31 @@ and can take the following values
 
 #### 2.2.4. Constant Memory
 
+Variables can be declared in constant memory space through using the `__constant__` qualifier.
+The constant memory variables must be declared in global scope. Furthermore, the amount of constant memory that
+can be declared is limited: 64 kB for all compute capabilities. Moreover, the constant memory is statically allocated
+and its content is visible to all threads and kernels in the read-only mode. The best performance from using constant 
+memory is expected when all threads within a warp read from the same memory address: here the contents of the constant 
+memory location is broadcasted to all threads in a warp through a single load operation. For example, a numerical constant
+can be stored in constant memory and read by threads in warp(s) to scale the components of an array.
 
+The [`cudaMemcpyToSymbol()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html
+#group__CUDART__MEMORY_1g9bcf02b53644eee2bef9983d807084c7) function can be used to initialize the constant memory from
+the host
+
+~~~
+cudaError_t cudaMemcpyToSymbol(const void* symbol, const void* src, size_t count);
+~~~
+{: .language-cuda}
+
+Here, `count` bytes from the memory address pointed to by the pointer variable `src` is copied to the memory location
+pointed to by `symbol` residing in the constant or global memory space. The `cudaMemcpyToSymbol()` is 
+[synchronous](https://docs.nvidia.com/cuda/cuda-runtime-api/api-sync-behavior.html#api-sync-behavior__memcpy-sync) with
+respect to the host in most cases. Constant memory is cached using a dedicated per-SM constant cache space.
 
 #### 2.2.5. Texture Memory
+
+
 
 #### 2.2.6. Global Memory
 
