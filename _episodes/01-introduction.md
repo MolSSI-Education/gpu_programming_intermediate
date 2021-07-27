@@ -22,12 +22,11 @@ keypoints:
     - [2.2.4. Constant Memory](#224-constant-memory)
     - [2.2.5. Texture Memory](#225-texture-memory)
     - [2.2.6. Global Memory](#226-global-memory)
+    - [2.2.7. GPU Cache Space](#227-gpu-cache-space)
   - [2.3. Host-Device Memory Management](#23-host-device-memory-management)
     - [2.3.1. Pinned Memory](#231-pinned-memory)
     - [2.3.2. Zero-copy Memory](#232-zero-copy-memory)
-    - [2.3.3. Unified Memory](#233-unified-memory)
-- [3. Example: Vector Addition (AXPY)](#3-example-vector-addition-axpy)
-- [4. Example: Matrix Addition](#4-example-matrix-addition)
+    - [2.3.3. Unified Virtual Addressing and Unified Memory](#233-unified-virtual-addressing-and-unified-memory)
 
 ## 1. Overview
 
@@ -49,11 +48,10 @@ The present tutorial extends the scope of NVIDIA's heterogeneous parallelization
  performance improvement and code optimization, we will adopt a quantitative profile-driven
  approach and make an extensive use of profiling tools provided by NVIDIA's **Nsight System**.
 
+## 2. CUDA Memory Model
 
 Before we begin writing code, let us delve into the important aspects of the of CUDA memory model
 in more details.
-
-## 2. CUDA Memory Model
 
 ### 2.1. Principle of Locality
 
@@ -69,7 +67,7 @@ contiguous array of data stored on the global memory. Temporal locality assumes 
 location is accessed, there is a higher probability for it to be referenced again in a short period
 of time and lower probabilities at later times.
 
-In [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/gpu_programming_beginner/
+In [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/gpu_programming_beginner
 {% link _episodes/01-introduction.md %}#2-parallel-programming-paradigms), we described the main 
 features of a typical modern GPU architecture which comparing them with those of GPU. There, 
 we explained that one of the most important hardware features of the CPU is its relatively 
@@ -87,7 +85,7 @@ and capacities. Within this hierarchy, as the capacity of the memory type increa
 increases. 
 
 As we discussed in [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/
-gpu_programming_beginner/{% link _episodes/01-introduction.md %}#2-parallel-programming-paradigms), 
+gpu_programming_beginner{% link _episodes/01-introduction.md %}#2-parallel-programming-paradigms), 
 both CPU and GPU main memory spaces are constructed by dynamic random access memory (DRAM). The lower-latency 
 memory units such as cache, however, are built using static random access memory (SRAM). As such, 
 based on the memory hierarchy, it would be logical to keep the data that are actively used by the processor
@@ -302,20 +300,52 @@ memory.
 
 #### 2.2.6. Global Memory
 
+Global memory is the most commonly used memory type on GPUs which has the highest latency and size capacity. The contents of 
+global memory have global scope and can be accessed by all threads and kernels on the device and their lifetime is the same 
+as that of the running application. Variables in global memory can be declared statically or dynamically. In the 
+[Basics of the Device Memory Management in CUDA](http://education.molssi.org/gpu_programming_beginner/03-cuda-program-model/
+#1-basics-of-the-device-memory-management-in-cuda), we demonstrated how to adopt [`cudaMalloc()`](https://docs.nvidia.com/
+cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1g37d37965bfb4803b6d4e59ff26856356), 
+[`cudaFree()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1ga042655cbbf3408f01061652a075e094), 
+[`cudaMemset()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gf7338650f7683c51ee26aadc6973c63a)
+and [`cudaMemcpy()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc263dbe6574220cc776b45438fc351e8)
+CUDA runtime APIs to dynamically allocate, deallocate, initialize and copy global memory, respectively. The static declaration
+of a variable in global memory can be performed using the `__device__` qualifier. Note that global memory has the highest 
+latency in data access among all memory types within CUDA memory model's hierarchy.
 
+It is important to note that since threads' execution cannot be synchronized between different thread blocks, the possibility of data
+hazard caused by simultaneous modifications of the same global memory address by multiple threads from different blocks should be avoided.
 
+#### 2.2.7. GPU Cache Space
+
+In addition to the programmable memory spaces within CUDA memory model's hierarchy, GPU devices are often armed with four types of 
+non-programmable cache memories
+
+- **L1**
+- **L2**
+- **Constant (Read-only)**
+- **Texture (Read-only)**
+
+On a CPU, both read and write operations can be cached. However, only the load operation can be cached on a GPU device.
+Each SM has its own L1 cache while there is only one L2 cache memory space shared by all SMs on the device. In addition to L1 
+and L2 cache memory spaces, constant and texture read-only cache spaces are provided in order to improve specific applications 
+performed on the GPU devices.
 
 ### 2.3. Host-Device Memory Management
+
+Since in heterogeneous parallel programs within CUDA framework, the host (CPU and its memory) and the device (GPU and its memory) 
+reside in distinct domains, memory management becomes an important task for the programmer. For example, although both host and kernel
+variables can be defined in the same code file, the host functions or device kernels cannot generally access the variables from the 
+other domain. CUDA runtime API functions are often implemented in a way that they make pre-assumptions about the memory space of the
+incoming arguments and variables. Therefore, it becomes programmer's responsibility to pass the correct variables from pertinent memory
+spaces to the runtime API functions or otherwise program ends with a crash or an undefined behavior. We will illustrate these issues
+with examples in the following sections.
 
 #### 2.3.1. Pinned Memory
 
 #### 2.3.2. Zero-copy Memory
 
-#### 2.3.3. Unified Memory
-
-## 3. Example: Vector Addition (AXPY)
-
-## 4. Example: Matrix Addition
+#### 2.3.3. Unified Virtual Addressing and Unified Memory
 
 {% include links.md %}
 
