@@ -337,15 +337,36 @@ Since in heterogeneous parallel programs within CUDA framework, the host (CPU an
 reside in distinct domains, memory management becomes an important task for the programmer. For example, although both host and kernel
 variables can be defined in the same code file, the host functions or device kernels cannot generally access the variables from the 
 other domain. CUDA runtime API functions are often implemented in a way that they make pre-assumptions about the memory space of the
-incoming arguments and variables. Therefore, it becomes programmer's responsibility to pass the correct variables from pertinent memory
-spaces to the runtime API functions or otherwise program ends with a crash or an undefined behavior. We will illustrate these issues
-with examples in the following sections.
+incoming arguments and variables. Therefore, it becomes programmer's responsibility to pass variables from appropriate memory domains
+to the runtime API functions or otherwise program ends with a crash or an undefined behavior.
+
+Before getting into the concept of pinned memory and and why they exist, let us focus on a few key concepts pertinent to the computer 
+memory management system that we will be frequently dealing with in our tutorial. The first concept in our list is 
+[**page fault**](https://en.wikipedia.org/wiki/Page_fault), exceptions raised by computer hardwares when a running application attempts 
+to access a [**memory page**](https://en.wikipedia.org/wiki/Page_(computer_memory)) (*i.e.*, a fixed-length contiguous block of 
+[**virtual memory**](https://en.wikipedia.org/wiki/Virtual_memory)) that had not been mapped into the 
+[**virtual address space (VAS)**](https://en.wikipedia.org/wiki/Virtual_address_space) by the [**memory management unit (MMU)**](https://
+en.wikipedia.org/wiki/Memory_management_unit). MMU's main responsibility is to translate all virtual memory addresses to their 
+physical counterparts. Contrary to what their name might convey, valid page *faults* are in fact necessary tools for any operating system 
+(OS), armed with virtual memory, in order to make the required page accessible, increase the amount of available memory to each program or
+terminate it when an illegal memory access occurs.
+
+By default, the allocated memory on the host domain is pageable: it is prone to page faults. Since the OS might move the data between different
+physical memory locations on the host at any moment, the GPU device cannot securely access the memory addresses corresponding to those data.
+As such, in order to transfer data from pageable memory locations on the host to another on device's memory space, CUDA driver temporarily
+allocates **page-locked** or **pinned** memory on the host, copies the data to the pinned memory locations and then transfers them to the 
+device memory space.
 
 #### 2.3.1. Pinned Memory
+
+
 
 #### 2.3.2. Zero-copy Memory
 
 #### 2.3.3. Unified Virtual Addressing and Unified Memory
 
-{% include links.md %}
 
+
+
+
+{% include links.md %}
