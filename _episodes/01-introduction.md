@@ -334,7 +334,7 @@ performed on the GPU devices.
 ### 2.3. Host-Device Memory Management
 
 Since in heterogeneous parallel programs within CUDA framework, the host (CPU and its memory) and the device (GPU and its memory) 
-reside in distinct domains, memory management becomes an important task for the programmer. For example, although both host and kernel
+domains are distinct, memory management becomes an important task for the programmer. For example, although both host and kernel
 variables can be defined in the same code file, the host functions or device kernels cannot generally access the variables from the 
 other domain. CUDA runtime API functions are often implemented in a way that they make pre-assumptions about the memory space of the
 incoming arguments and variables. Therefore, it becomes programmer's responsibility to pass variables from appropriate memory domains
@@ -351,22 +351,84 @@ physical counterparts. Contrary to what their name might convey, valid page *fau
 (OS), armed with virtual memory, in order to make the required page accessible, increase the amount of available memory to each program or
 terminate it when an illegal memory access occurs.
 
-By default, the allocated memory on the host domain is pageable: it is prone to page faults. Since the OS might move the data between different
-physical memory locations on the host at any moment, the GPU device cannot securely access the memory addresses corresponding to those data.
-As such, in order to transfer data from pageable memory locations on the host to another on device's memory space, CUDA driver temporarily
-allocates **page-locked** or **pinned** memory on the host, copies the data to the pinned memory locations and then transfers them to the 
-device memory space.
-
 #### 2.3.1. Pinned Memory
 
+By default, the allocated memory on the host domain is pageable: it is prone to page faults. Since the OS might move the data between different
+physical memory locations on the host at any moment, the GPU device cannot securely access the memory addresses corresponding to specific data.
+Therefore, in order to transfer data from a pageable host memory location to a memory address on the device, CUDA driver temporarily
+allocates [**page-locked** or **pinned** memory](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#pinned-memory) on the host
+and copies the data to the pinned memory locations. Then, those data can be safely transferred to the device memory destination.
 
+The host pinned memory can be allocated using the CUDA runtime function, [`cudaMallocHost()`](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1gd5c991beb38e2b8419f50285707ae87e) as
+
+~~~
+cudaError_t cudaMallocHost(void** ptr, size_t count);
+~~~
+{: .language-cuda}
+
+where `count` bytes of the host memory, pointed to by `ptr`, become page-locked and directly accessible to the device. As such, pinned memory
+that is now accessible to the device benefits from higher bandwidths than pageable memory on the host for load/storage operations.
+
+Page-locked memory can be released via using [`cudaFreeHost()`](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__MEMORY.html#group__CUDART__MEMORY_1g71c078689c17627566b2a91989184969) as
+
+~~~
+cudaError_t cudaFreeHost(void* ptr);
+~~~
+{: .language-cuda}
+
+Higher bandwidths in pinned memory (compared to that of pageable host memory) makes it more suitable for high-throughput 
+large-scale data transfer. However, pinning to much host memory takes away from what is otherwise available to the system
+for storing data in virtual (host) memory causing significant performance penalties. Furthermore, allocation and deallocation
+of pinned memory are more expensive operations than those for pageable host memory. Hence, the expected speedups resulting 
+from adopting pinned memory also become dependent upon the compute compatibility of the device being employed as well.
+
+In general, data transfers between host and the device should be minimized in the program. One effective technique to 
+achieve this goal is to hide the data transfer latency by overlapping it with kernel execution through CUDA streams and concurrency.
+We will discuss this topic in details later in this tutorial.
+
+TODO: Put the example with host pageable and then replace with pinned memory. Profile each and compare.
 
 #### 2.3.2. Zero-copy Memory
 
+[Zero-copy memory](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#zero-copy-memory) is a non-pageable 
+(page-locked) memory that is mapped into the device memory address space. Therefore, it breaches the separation of the host 
+and the device memory domains by being accessible both to host and GPU threads. Zero-copy memory can be allocated via
+[`cudaHostAlloc()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gb65da58f444e7230d3322b6126bb4902)
+CUDA runtime API
+
+~~~
+cudaError_t cudaHostAlloc(void** pHost, size_t size, unsigned int flags);
+~~~
+{: .language-cuda}
+
+where the third argument, `flags`, can have the following values
+
+- [**`cudaHostAllocDefault`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g1e00f7734325eb38d75f3ffeae6acac8) 
+- [**`cudaHostAllocPortable`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1gc46ce76be41cf79774331cc8cfceb52b)
+- [**`cudaHostAllocMapped`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g01e600c738b962c8f973dda7708f7a70)
+- [**`cudaHostAllocWriteCombined`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g3a7db37d02ce0b2350067ab639ef321c):
+The allocated memory is of write-combined (WC) type which can be transferred more efficiently across the PCI Express bus on some system 
+configurations. The read operations on WC memory might not be as efficient with most CPUs. Therefore, WC memory becomes a good candidate 
+for buffers written by the CPUs and read by the device via mapped pinned memory or through host-to-device transfers. 
+
+The `cudaHostAllocDefault` option causes `cudaHostAlloc()` becomes equivalent to `cudaMallocHost()`. Adopting `cudaHostAllocPortable` option dictates
+all CUDA contexts (not just the allocator) to consider the allocated memory as pinned memory. With `cudaHostAllocMapped` option, the allocated memory is
+mapped into the CUDA address space. A device pointer, `devPtr`, corresponding to the host allocated pinned memory buffer, pointed to by `hostPtr`, may 
+be obtained through [`cudaHostGetDevicePointer()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc00502b44e5f1bdc0b424487ebb08db0)
+CUDA runtime API as
+
+~~~
+cudaError_t cudaHostGetDevicePointer(void** devPtr, void* hostPtr, unsigned int flags);
+~~~
+{: .language-cuda}
+
+where according to the CUDA Toolkit [documentation](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc00502b44e5f1bdc0b424487ebb08db0), the `flags` variable in here will be used in future releases and 
+should be set to zero at the moment.
+
 #### 2.3.3. Unified Virtual Addressing and Unified Memory
-
-
-
 
 
 {% include links.md %}
