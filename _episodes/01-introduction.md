@@ -26,7 +26,8 @@ keypoints:
   - [2.3. Host-Device Memory Management](#23-host-device-memory-management)
     - [2.3.1. Pinned Memory](#231-pinned-memory)
     - [2.3.2. Zero-copy Memory](#232-zero-copy-memory)
-    - [2.3.3. Unified Virtual Addressing and Unified Memory](#233-unified-virtual-addressing-and-unified-memory)
+    - [2.3.3. Unified Virtual Addressing](#233-unified-virtual-addressing)
+    - [2.3.4. Unified Memory](#234-unified-memory)
 
 ## 1. Overview
 
@@ -408,16 +409,14 @@ where the third argument, `flags`, can have the following values
 - [**`cudaHostAllocDefault`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g1e00f7734325eb38d75f3ffeae6acac8) 
 - [**`cudaHostAllocPortable`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1gc46ce76be41cf79774331cc8cfceb52b)
 - [**`cudaHostAllocMapped`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g01e600c738b962c8f973dda7708f7a70)
-- [**`cudaHostAllocWriteCombined`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g3a7db37d02ce0b2350067ab639ef321c):
-The allocated memory is of write-combined (WC) type which can be transferred more efficiently across the PCI Express bus on some system 
-configurations. The read operations on WC memory might not be as efficient with most CPUs. Therefore, WC memory becomes a good candidate 
-for buffers written by the CPUs and read by the device via mapped pinned memory or through host-to-device transfers. 
+- [**`cudaHostAllocWriteCombined`**](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g3a7db37d02ce0b2350067ab639ef321c) 
 
 The `cudaHostAllocDefault` option causes `cudaHostAlloc()` becomes equivalent to `cudaMallocHost()`. Adopting `cudaHostAllocPortable` option dictates
-all CUDA contexts (not just the allocator) to consider the allocated memory as pinned memory. With `cudaHostAllocMapped` option, the allocated memory is
-mapped into the CUDA address space. A device pointer, `devPtr`, corresponding to the host allocated pinned memory buffer, pointed to by `hostPtr`, may 
-be obtained through [`cudaHostGetDevicePointer()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc00502b44e5f1bdc0b424487ebb08db0)
-CUDA runtime API as
+all CUDA contexts (not just the allocator) to consider the allocated memory as pinned memory. Using the `cudaHostAllocWriteCombined` option, the allocated 
+memory becomes of write-combined (WC) type which can be transferred more efficiently across the PCI Express bus on some system configurations. The read 
+operations on WC memory might not be as efficient with most CPUs. Therefore, WC memory becomes a good candidate for buffers written by the CPUs and read by
+the device via mapped pinned memory or through host-to-device transfers. With `cudaHostAllocMapped` option, the allocated memory is mapped into the CUDA 
+address space. A device pointer, `devPtr`, corresponding to the host allocated pinned memory buffer, pointed to by `hostPtr`, may be obtained through [`cudaHostGetDevicePointer()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc00502b44e5f1bdc0b424487ebb08db0) CUDA runtime API as
 
 ~~~
 cudaError_t cudaHostGetDevicePointer(void** devPtr, void* hostPtr, unsigned int flags);
@@ -426,9 +425,37 @@ cudaError_t cudaHostGetDevicePointer(void** devPtr, void* hostPtr, unsigned int 
 
 where according to the CUDA Toolkit [documentation](https://docs.nvidia.com/cuda/cuda-runtime-api/
 group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gc00502b44e5f1bdc0b424487ebb08db0), the `flags` variable in here will be used in future releases and 
-should be set to zero at the moment.
+should be set to zero at the moment. It is important to note that all transactions to the page-locked mapped memory address has to pass through PCI-express bus
+connection which because of its low bandwidth cau cause significant latency in data transfer involving frequent load/store operations. Therefore, it should be
+used with caution as in many cases, using global memory might simply provide a better alternative for performance reasons.
 
-#### 2.3.3. Unified Virtual Addressing and Unified Memory
+The page-locked host memory can be released using [`cudaFreeHost()`](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__MEMORY.html#group__CUDART__MEMORY_1g71c078689c17627566b2a91989184969). 
+
+> ## Note:
+> Since the zero-copy memory is shared between the host and the device, access to data on the mapped page-locked memory address should be 
+> synchronized across both domains or otherwise, undefined behavior due to data hazard can occur.
+{: .discussion}
+
+#### 2.3.3. Unified Virtual Addressing
+
+Introduced in CUDA 4.0 and supported by devices with compute compatibility 2.0 and later, unified virtual addressing (UVA) provides a unified memory
+address space for both host and device. For systems without UVA support, pointers to host and device memory locations must be explicitly distinguished
+and specified by the programmer.
+
+![Figure 2]()
+
+On the other hand, UVA unifies memory space addressing making the corresponding host and device pointers identical and accessible to the entire application.
+It might be instructive to explain in more detail how using UVA might be more convenient than working with pinned memory. For example, with zero-copy memory,
+one should 1) allocate mapped non-pageable host memory, 2) obtain device pointer to the mapped memory using `cudaHostGetDevicePointer()` CUDA runtime API,
+and 3) pass the received pointer in the previous step to the intended kernel. Within UVA framework, the need for creating/managing two separate pointers
+to host and device memory addresses or getting device pointers through `cudaHostGetDevicePointer()` CUDA runtime function is lifted. Therefore, the pointers
+set by `cudaHostAlloc()` functions can be directly passed to the kernel. As such, UVA can also improve maintainability and readability of the CUDA parallel
+program code.
+
+#### 2.3.4. Unified Memory
+
+
 
 
 {% include links.md %}
