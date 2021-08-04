@@ -1,6 +1,6 @@
 ---
 title: "CUDA Memory Model: Basics"
-teaching: 0
+teaching: 60
 exercises: 0
 questions:
 - "What is CUDA Memory Model?"
@@ -8,26 +8,32 @@ questions:
 - "Why is there a memory hierarchy and how is it defined?"
 objectives:
 - "Understanding the CUDA Memory Model and its role in CUDA C/C++ programming"
+- "Learning about memory hierarchy and how to adopt it to write an efficient program"
+- "Mastering the details of the host-device memory management system"
 keypoints:
-- "First key point. Brief Answer to questions. (FIXME)"
+- "CUDA memory model"
+- "Memory hierarchy"
+- "Host-device memory management"
 ---
 
-- [1. Overview](#1-overview)
-- [2. CUDA Memory Model](#2-cuda-memory-model)
-  - [2.1. Principle of Locality](#21-principle-of-locality)
-  - [2.2. Memory Hierarchy](#22-memory-hierarchy)
-    - [2.2.1. Registers](#221-registers)
-    - [2.2.2. Local Memory](#222-local-memory)
-    - [2.2.3. Shared Memory](#223-shared-memory)
-    - [2.2.4. Constant Memory](#224-constant-memory)
-    - [2.2.5. Texture Memory](#225-texture-memory)
-    - [2.2.6. Global Memory](#226-global-memory)
-    - [2.2.7. GPU Cache Space](#227-gpu-cache-space)
-  - [2.3. Host-Device Memory Management](#23-host-device-memory-management)
-    - [2.3.1. Pinned Memory](#231-pinned-memory)
-    - [2.3.2. Zero-copy Memory](#232-zero-copy-memory)
-    - [2.3.3. Unified Virtual Addressing](#233-unified-virtual-addressing)
-    - [2.3.4. Unified Memory](#234-unified-memory)
+> ## Table of Contents
+> - [1. Overview](#1-overview)
+> - [2. CUDA Memory Model](#2-cuda-memory-model)
+>  - [2.1. Principle of Locality](#21-principle-of-locality)
+>  - [2.2. Memory Hierarchy](#22-memory-hierarchy)
+>    - [2.2.1. Registers](#221-registers)
+>    - [2.2.2. Local Memory](#222-local-memory)
+>    - [2.2.3. Shared Memory](#223-shared-memory)
+>    - [2.2.4. Constant Memory](#224-constant-memory)
+>    - [2.2.5. Texture Memory](#225-texture-memory)
+>    - [2.2.6. Global Memory](#226-global-memory)
+>    - [2.2.7. GPU Cache Space](#227-gpu-cache-space)
+>  - [2.3. Host-Device Memory Management](#23-host-device-memory-management)
+>    - [2.3.1. Pinned Memory](#231-pinned-memory)
+>    - [2.3.2. Zero-copy Memory](#232-zero-copy-memory)
+>    - [2.3.3. Unified Virtual Addressing](#233-unified-virtual-addressing)
+>    - [2.3.4. Unified Memory](#234-unified-memory) 
+{: .prereq}
 
 ## 1. Overview
 
@@ -363,7 +369,7 @@ and copies the data to the pinned memory locations. Then, those data can be safe
 The host pinned memory can be allocated using the CUDA runtime function, [`cudaMallocHost()`](https://docs.nvidia.com/cuda/cuda-runtime-api/
 group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1gd5c991beb38e2b8419f50285707ae87e) as
 
-~~~
+0~~~
 cudaError_t cudaMallocHost(void** ptr, size_t count);
 ~~~
 {: .language-cuda}
@@ -439,7 +445,7 @@ group__CUDART__MEMORY.html#group__CUDART__MEMORY_1g71c078689c17627566b2a91989184
 
 #### 2.3.3. Unified Virtual Addressing
 
-Introduced in CUDA 4.0 and supported by devices with compute compatibility 2.0 and later, unified virtual addressing (UVA) provides a unified memory
+Introduced in CUDA 4.0 and supported by devices with compute compatibility 2.0 and later, unified virtual addressing (UVA) provides a Unified Memory
 address space for both host and device. For systems without UVA support, pointers to host and device memory locations must be explicitly distinguished
 and specified by the programmer.
 
@@ -450,12 +456,54 @@ It might be instructive to explain in more detail how using UVA might be more co
 one should 1) allocate mapped non-pageable host memory, 2) obtain device pointer to the mapped memory using `cudaHostGetDevicePointer()` CUDA runtime API,
 and 3) pass the received pointer in the previous step to the intended kernel. Within UVA framework, the need for creating/managing two separate pointers
 to host and device memory addresses or getting device pointers through `cudaHostGetDevicePointer()` CUDA runtime function is lifted. Therefore, the pointers
-set by `cudaHostAlloc()` functions can be directly passed to the kernel. As such, UVA can also improve maintainability and readability of the CUDA parallel
-program code.
+set by `cudaHostAlloc()` functions can be directly passed to the kernel.
 
 #### 2.3.4. Unified Memory
 
+NVIDIA introduced Unified Memory in CUDA 6.0 as a new feature to improve maintainability and readability in CUDA programs and to simplify memory management 
+in the application. In this framework, memory allocations from Unified Memory pool are automatically managed by the system and become accessible to both host
+and device via a single memory address pointer. Based on memory access request from the host or the device, the Unified Memory system automatically migrates
+data in the Unified Memory space. As such, the need for explicit management of the memory allocation and data transfer, as discussed in 
+[Basics of the Device Memory Management in CUDA](http://education.molssi.org/gpu_programming_beginner/03-cuda-program-model/#1-basics-of-the-device-memory-management-in-cuda), is lifted. 
 
+Managed memory can be allocated statically or dynamically. For static declaration of a memory-managed GPU variable, simply add the qualifier `__managed__`
+to its declaration as follows 
 
+~~~
+__device__ __managed__ double x;
+~~~
+{: .language-cuda}
+
+Note that this method should only be used within file- and global scopes. Managed memory can also be dynamically allocated using the CUDA runtime function,
+[``](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1gd228014f19cc0975ebe3e0dd2af6dd1b) as
+
+~~~
+cudaError_t cudaMallocManaged (void** devPtr, size_t size, unsigned int flags = cudaMemAttachGlobal);
+~~~
+{: .language-cuda}
+
+where `devPtr` is the pointer to the allocated device memory, `size` is the size of the allocated memory bytes and `flags` specifies the default stream 
+association for the intended managed memory allocation and must be set either to [`cudaMemAttachGlobal`](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__TYPES.html#group__CUDART__TYPES_1g4808e47eba73eb94622ec70a9f9b91ff) (default) or [`cudaMemAttachHost`](https://docs.nvidia.com/cuda/
+cuda-runtime-api/group__CUDART__TYPES.html#group__CUDART__TYPES_1g4f9a428d18fdd89a99441d0dd27131c0). The `cudaMemAttachGlobal` flag makes the allocated
+managed memory accessible from any stream or device. On the contrary, the `cudaMemAttachHost` flag restricts the access to the allocated memory only to
+those devices that have a non-zero value for the device attribute [`cudaDevAttrConcurrentManagedAccess`](https://docs.nvidia.com/cuda/cuda-runtime-api/
+group__CUDART__TYPES.html#group__CUDART__TYPES_1gg49e2f8c2c0bd6fe264f2fc970912e5cdc88178f29891f2c18fe67361cc80de09). Managed memory should be deallocated
+using [`cudaFree()`](https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__MEMORY.html#group__CUDART__MEMORY_1ga042655cbbf3408f01061652a075e094)
+CUDA runtime API.
+
+> ## Note:
+> Since it is not possible to call `cudaMallocManaged()` in CUDA 6.0, every managed memory must either be dynamically allocated from the host or 
+> statically declared within global scope.
+{: .discussion}
+
+We should point out that although Unified Memory requires UVA's support, they should be distinguished as completely different technological frameworks.
+UVA offers a Unified Memory address space for every processor installed within the system. However, contrary to the Unified (managed) Memory, UVA does not
+automatically migrate data from one memory location to another and across host-device domains. 
+
+Unified Memory is also similar to the zero-copy memory in as they both provide shared access to data for the host and the device. However, the host-based 
+allocation of the zero-copy memory causes the memory access performance to suffer from having to manually transfer data over PCIe bus with high-latency. 
+Unified memory system, on the other hand, does not suffer from the aforementioned issues as it can automatically migrate data, on demand, between host 
+and device in order to enhance the locality and ultimately, performance.
 
 {% include links.md %}
