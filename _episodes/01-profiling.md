@@ -49,11 +49,32 @@ NVIDIA Nsight System offers two major interfaces, through which users can profil
 - Command-Line Interface (CLI)
 - Graphical User Interface (GUI)
 
-In the following sections, we overview the mechanics of using each method in detail.
+In the following sections, we overview the mechanics of using each method in details.
 
 ### 2.1. Command Line Interface Profiler
 
+The general form of the Nsight System command line interface (CLI) profiler, **nsys**, is similar to that of 
+nvprof we saw in [MolSSI's Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++ at the beginner 
+level](http://education.molssi.org/gpu_programming_beginner) 
 
+~~~
+$ nsys [command_switch] [optional command_switch_options] <application> [optional application_options]
+~~~
+{: .language-bash}
+
+A list of possible values for `command_switch` and optional `command_switch_options` are provided in [Nsight System's 
+User Manual](https://docs.nvidia.com/nsight-systems/UserGuide/index.html#cli-options). The `<application>` refers to the name of
+the profilee executable. 
+
+Despite a rather complicated form mentioned above, the following command will be sufficient for the majority of our applications
+in this tutorial
+
+~~~
+$ nsys profile --stats=true <application>
+~~~
+
+Here, the `--stats=true` option triggers the post processing and generation of the statistical data summary collected by
+the Nsight System profiler.
 
 ### 2.2. Graphical User Interface Profiler
 
