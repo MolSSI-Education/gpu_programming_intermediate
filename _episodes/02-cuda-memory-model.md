@@ -35,7 +35,6 @@ keypoints:
 >    - [2.3.4. Unified Memory](#234-unified-memory) 
 {: .prereq}
 
-## 1. Overview
 
 In [MolSSI's Fundamentals of Heterogeneous Parallel Programming with CUDA
  C/C++ at the beginner level](http://education.molssi.org/gpu_programming_beginner),
@@ -44,21 +43,20 @@ and execution models. These models layout the fundamental aspects of CUDA progra
 platform and expose various conceptual parallelism abstractions at the logical 
 architectural and application levels.
 
-The present tutorial extends the scope of NVIDIA's heterogeneous parallelization platform to
- **CUDA memory model**, which exposes a unified hierarchical memory abstraction for both 
- host and device memory systems. It is also founded on NVIDIA's [Best Practices 
- Guide for CUDA C/C++](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html)
- and encourages users to follow the **Asses**, **Parallelize**, **Optimize** and **Deploy**
- ([**APOD**](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#assess-parallelize-optimize-deploy))
- application design cycle for an efficient and rapid recognition of the parallelization 
- opportunities in programs and improving the code quality and performance. In our analysis for
- performance improvement and code optimization, we will adopt a quantitative profile-driven
- approach and make an extensive use of profiling tools provided by NVIDIA's **Nsight System**.
+This lesson extends the scope of NVIDIA's heterogeneous parallelization platform to
+**CUDA memory model**, which exposes a unified hierarchical memory abstraction for both 
+host and device memory systems. Here, we discuss CUDA memory model, one of the most important
+topics in heterogeneous parallel programming with CUDA C/C++. CUDA exposes various type of 
+programmable device memory types in a hierarchical structure which allows user to leverage 
+additional levels of parallelism, an advantage that is not usually available with 
+non-programmable memory in CPU parallelization. Using multiple examples, we demonstrate how
+a deeper knowledge of GPU architecture and memory types allows the programmer to design more 
+efficient parallel program using CUDA memory model.
 
 ## 2. CUDA Memory Model
 
-Before we begin writing code, let us delve into the important aspects of the of CUDA memory model
-in more details.
+Before getting our hands dirty with the technicalities of coding, let us delve into the important 
+aspects of the of CUDA memory model in some details.
 
 ### 2.1. Principle of Locality
 
@@ -74,8 +72,8 @@ contiguous array of data stored on the global memory. Temporal locality assumes 
 location is accessed, there is a higher probability for it to be referenced again in a short period
 of time and lower probabilities at later times.
 
-In [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/gpu_programming_beginner
-{% link _episodes/01-introduction.md %}#2-parallel-programming-paradigms), we described the main 
+In [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/
+gpu_programming_beginner/01-introduction/#2-parallel-programming-paradigms), we described the main 
 features of a typical modern GPU architecture which comparing them with those of GPU. There, 
 we explained that one of the most important hardware features of the CPU is its relatively 
 large cache memory size which allows it to improve the application optimization process by 
@@ -92,7 +90,7 @@ and capacities. Within this hierarchy, as the capacity of the memory type increa
 increases. 
 
 As we discussed in [Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++](http://education.molssi.org/
-gpu_programming_beginner{% link _episodes/01-introduction.md %}#2-parallel-programming-paradigms), 
+gpu_programming_beginner/01-introduction/#2-parallel-programming-paradigms), 
 both CPU and GPU main memory spaces are constructed by dynamic random access memory (DRAM). The lower-latency 
 memory units such as cache, however, are built using static random access memory (SRAM). As such, 
 based on the memory hierarchy, it would be logical to keep the data that are actively used by the processor
