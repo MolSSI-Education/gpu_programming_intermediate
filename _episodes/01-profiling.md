@@ -1,24 +1,27 @@
 ---
-title: "Profiling with NVIDIA Nsight System"
+title: "Profiling with NVIDIA Nsight"
 teaching: 60
 exercises: 0
 questions:
-- "What is NVIDIA Nsight System? What does it do and how can I use it?"
 - "What is profiling? Why and how is it useful for parallelization?"
+- "What are NVIDIA Nsight Systems and Nsight Compute? What do they do and how can I use them?"
 objectives:
 - "Mastering best practices in profiling-driven approach in CUDA C/C++ programming"
 keypoints:
-- "NVIDIA Nsight System"
+- "NVIDIA Nsight Systems"
 - "Profiling-driven CUDA C/C++ programming"
 - "APOC application design cycle"
 ---
 
 - [1. Overview](#1-overview)
-- [2. NVIDIA Nsight System](#2-nvidia-nsight-system)
+- [2. NVIDIA Nsight Systems](#2-nvidia-nsight-systems)
   - [2.1. Command Line Interface Profiler](#21-command-line-interface-profiler)
   - [2.2. Graphical User Interface Profiler](#22-graphical-user-interface-profiler)
-- [3. Example: Vector Addition (AXPY)](#3-example-vector-addition-axpy)
-- [4. Example: Matrix Addition](#4-example-matrix-addition)
+- [3. NVIDIA Nsight Compute](#3-nvidia-nsight-compute)
+  - [3.1. Command Line Interface Profiler](#31-command-line-interface-profiler)
+  - [3.2. Graphical User Interface Profiler](#32-graphical-user-interface-profiler)
+- [4. Example: Vector Addition (AXPY)](#4-example-vector-addition-axpy)
+- [5. Example: Matrix Addition](#5-example-matrix-addition)
 
 ## 1. Overview
 
@@ -30,21 +33,30 @@ we have based our approach on NVIDIA's [Best Practices  Guide for CUDA C/C++](ht
 cuda/cuda-c-best-practices-guide/index.html). These best practices guidelines encourage users to follow the **Asses**, 
 **Parallelize**, **Optimize** and **Deploy** ([**APOD**](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/
 index.html#assess-parallelize-optimize-deploy)) application design cycle for an efficient and rapid recognition
-of the parallelization opportunities in programs and improving the code quality and performance. In our analysis 
-for performance improvement and code optimization, we will adopt a quantitative profile-driven approach and make 
-an extensive use of profiling tools provided by NVIDIA's **Nsight System**.
+of the parallelization opportunities in programs and improving the code quality and performance. 
 
-## 2. NVIDIA Nsight System
+The NVIDIA Nsight family consists of three members:
 
-NVIDIA Nsight System is a sampling profiler with tracing feature which allows users to collect and process performance
-statistics. NVIDIA Nsight System recognizes three main activities: 1) profiling, 2) Sampling, and 3) tracing. The performance data 
-collection is called profiling. In order to collect information on the timings spent on function calls during the program, the
-profiler periodically stops the application under investigation (profilee) to collect information on call stacks of active threads
-(backtraces). The sampling results are generally less precise when the number of samples are small. Tracing refers to the collection
-of precise quantitative information about a variety of activities that might be happening in profilee or the OS. The Nsight System 
-collects the information in a profiling session which usually involves both sampling and tracing activities.
+- **Nsight Systems**: A comprehensive system-wide tool for the application performance analysis and optimization
+- **Nsight Compute**: A professional tool for kernel-level performance analysis and debugging
+- **Nsight Graphics**: An optimization and debugging software for graphical workflows such as rendering performance *etc.*
 
-NVIDIA Nsight System offers two major interfaces, through which users can profile an application:
+NVIDIA recommends developers to start the profiling process by using **Nsight Systems** in order to identify the most important and impactful
+system-wide opportunities for optimization and performance improvement. Further optimizations and fine-tunings at the CUDA kernel and API
+level can be performed through **Nsight Compute**. In our analysis for performance improvement and code optimization, we will adopt a 
+quantitative profile-driven approach and make an extensive use of profiling tools provided by NVIDIA's Nsight Systems  and Nsight Compute.
+
+## 2. NVIDIA Nsight Systems
+
+NVIDIA Nsight Systems is a system-wide performance analysis tool and sampling profiler with tracing feature which allows users to collect and 
+process CPU-GPU performance statistics. NVIDIA Nsight Systems recognizes three main activities: 1) profiling, 2) Sampling, and 3) tracing.
+The performance data collection is called profiling. In order to collect information on the timings spent on function calls during 
+the program, the profiler periodically stops the application under investigation (profilee) to collect information on call stacks 
+of active threads (backtraces). The sampling results are generally less precise when the number of samples are small. Tracing refers
+to the collection of precise quantitative information about a variety of activities that might be happening in profilee or the OS.
+The Nsight Systems collects the information in a profiling session which usually involves both sampling and tracing activities.
+
+NVIDIA Nsight Systems offers two major interfaces, through which users can profile an application:
 
 - Command-Line Interface (CLI)
 - Graphical User Interface (GUI)
@@ -53,7 +65,7 @@ In the following sections, we overview the mechanics of using each method in det
 
 ### 2.1. Command Line Interface Profiler
 
-The general form of the Nsight System command line interface (CLI) profiler, **nsys**, is similar to that of 
+The general form of the Nsight Systems command line interface (CLI) profiler, **nsys**, is similar to that of 
 nvprof we saw in [MolSSI's Fundamentals of Heterogeneous Parallel Programming with CUDA C/C++ at the beginner 
 level](http://education.molssi.org/gpu_programming_beginner) 
 
@@ -62,7 +74,7 @@ $ nsys [command_switch] [optional command_switch_options] <application> [optiona
 ~~~
 {: .language-bash}
 
-A list of possible values for `command_switch` and optional `command_switch_options` are provided in [Nsight System's 
+A list of possible values for `command_switch` and optional `command_switch_options` are provided in [Nsight Systems s 
 User Manual](https://docs.nvidia.com/nsight-systems/UserGuide/index.html#cli-options). The `<application>` refers to the name of
 the profilee executable. 
 
@@ -72,16 +84,21 @@ in this tutorial
 ~~~
 $ nsys profile --stats=true <application>
 ~~~
+{: .language-bash}
 
 Here, the `--stats=true` option triggers the post processing and generation of the statistical data summary collected by
-the Nsight System profiler.
+the Nsight Systems profiler. 
 
 ### 2.2. Graphical User Interface Profiler
 
+## 3. NVIDIA Nsight Compute
 
+### 3.1. Command Line Interface Profiler
 
-## 3. Example: Vector Addition (AXPY)
+### 3.2. Graphical User Interface Profiler
 
-## 4. Example: Matrix Addition
+## 4. Example: Vector Addition (AXPY)
+
+## 5. Example: Matrix Addition
 
 {% include links.md %}
