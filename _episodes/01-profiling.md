@@ -87,9 +87,27 @@ $ nsys profile --stats=true <application>
 {: .language-bash}
 
 Here, the `--stats=true` option triggers the post processing and generation of the statistical data summary collected by
-the Nsight Systems profiler. 
+the Nsight Systems profiler. The CLI gathers the results in an intermediate *.qdstrm* file which needs to be further processed
+either by importing it in a GUI or using the standalone Qdstrm Importer in order to generate an optimized *.qdrep* report file.
+For portability reasons and future analysis of the reports on the same or different host machine and sharing the results, the .qdrep
+formant should be used.
+
+> ## Note:
+> In order to import a .qdstrm file in a GUI, the host GUI and CLI version must match. The host GUI is only backwards compatible with
+> .qdrep files.
+{: .discussion}
+
+At the time of writing this tutorials, Nsight Systems attempts to convert the intermediate report files to their 
+.qdrep report counterparts with the same names after finishing the profiling run if the necessary set of required libraries are available.
+See [Nsight Systems' documentation](https://docs.nvidia.com/nsight-systems/UserGuide/index.html#importing-qdstrm-files) for further
+details. It is important to note that setting the `--stats` option to `True` results in the creation of a SQLite database after the 
+collection of results by Nsight Systems. If a large amount of data is captured, creating the corresponding database(s) may require longer 
+than normal time periods to complete. For safety reasons, Nsight Systems does not rewrite the results on the same output files by default.
+If intended otherwise, users can adopt the `-f` or `--force-overwrite=true` options to overwrite the (.qdstrm, .qdrep, .sqlite) result files.
 
 ### 2.2. Graphical User Interface Profiler
+
+
 
 ## 3. NVIDIA Nsight Compute
 
