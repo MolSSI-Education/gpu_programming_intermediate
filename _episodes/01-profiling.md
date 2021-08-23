@@ -10,7 +10,7 @@ objectives:
 keypoints:
 - "NVIDIA Nsight Systems"
 - "Profiling-driven CUDA C/C++ programming"
-- "APOC application design cycle"
+- "APOD application design cycle"
 ---
 
 - [1. Overview](#1-overview)
@@ -19,7 +19,7 @@ keypoints:
     - [2.1.1. CUDA API Statistics](#211-cuda-api-statistics)
     - [2.1.2. CUDA Kernel Statistics](#212-cuda-kernel-statistics)
     - [2.1.3. CUDA Memory Operations Statistics](#213-cuda-memory-operations-statistics)
-    - [2.1.3. Operating System Runtime API Statistics](#213-operating-system-runtime-api-statistics)
+    - [2.1.4. Operating System Runtime API Statistics](#214-operating-system-runtime-api-statistics)
   - [2.2. Graphical User Interface Profiler](#22-graphical-user-interface-profiler)
 - [3. NVIDIA Nsight Compute](#3-nvidia-nsight-compute)
   - [3.1. Command Line Interface Profiler](#31-command-line-interface-profiler)
@@ -267,7 +267,7 @@ CUDA Memory Operation Statistics (by size in KiB):
 ~~~
 {: .output}
 
-#### 2.1.3. Operating System Runtime API Statistics
+#### 2.1.4. Operating System Runtime API Statistics
 
 [The OS Runtime API report table](https://docs.nvidia.com/nsight-systems/UserGuide/index.html#osrtsum) has seven columns,
 in which all timings are in nanoseconds (ns):
@@ -309,16 +309,16 @@ Operating System Runtime API Statistics:
 ~~~
 {: .output}
 
+So far, we have demonstrated that the nsys CLI profiler provides a comprehensive report on statistics of CUDA Runtime 
+APIs, GPU kernel executions, CUDA Memory Operations, and OS Runtime API calls. These reports provide useful information
+about the performance of the application and offer a great tool for adopting the APOD cycle for both analysis and
+performance optimization. In addition to the CLI profiler, NVIDIA offers profiling tools using GUIs. These are convenient 
+ways to analyze profiling reports or compare performance results from different profiling runs on the same application.
+In the following sections, we overview the main aspects of the NVIDIA Nsight Systems' GUI profiler.
+
 ### 2.2. Graphical User Interface Profiler
 
-As you have seen in [Command Line Interface Profiler](#21-command-line-interface-profiler) Subsection, the nsys CLI 
-profiler provides a comprehensive report on statistics of CUDA Runtime APIs, GPU kernel executions, CUDA Memory Operations,
-and OS Runtime API calls. These reports provide the key information about the performance of the application and offer
-a great tool to start the APOD cyclic process for analysis and performance optimization.
 
-In addition to the CLI profiler, NVIDIA offers profiling tools using GUIs. These are convenient ways to analyze profiling
-reports or compare performance results from different profiling runs on the same application. In the following sections,
-we overview the main aspects of the NVIDIA Nsight Systems' GUI profiler.
 
 ## 3. NVIDIA Nsight Compute
 
