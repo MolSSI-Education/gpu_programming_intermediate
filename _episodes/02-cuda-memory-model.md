@@ -117,7 +117,7 @@ model exposes several types of programmable memory spaces on the device, each wi
 
 The following figure provides a simplified representation of the memory hierarchy.
 
-![Figure 1]()
+![Figure 1](../fig/memory_hierarchy.png)
 
 As the figure illustrates, each thread within a kernel has its own private local memory.  
 Shared memory belongs to all threads in a block. The contents in the shared memory are accessible
