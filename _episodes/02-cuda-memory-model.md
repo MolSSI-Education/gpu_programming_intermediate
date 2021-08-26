@@ -367,7 +367,7 @@ and copies the data to the pinned memory locations. Then, those data can be safe
 The host pinned memory can be allocated using the CUDA runtime function, [`cudaMallocHost()`](https://docs.nvidia.com/cuda/cuda-runtime-api/
 group__CUDART__HIGHLEVEL.html#group__CUDART__HIGHLEVEL_1gd5c991beb38e2b8419f50285707ae87e) as
 
-0~~~
+~~~
 cudaError_t cudaMallocHost(void** ptr, size_t count);
 ~~~
 {: .language-cuda}
