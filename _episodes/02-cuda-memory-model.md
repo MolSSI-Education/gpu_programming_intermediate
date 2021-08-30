@@ -393,8 +393,6 @@ In general, data transfers between host and the device should be minimized in th
 achieve this goal is to hide the data transfer latency by overlapping it with kernel execution through CUDA streams and concurrency.
 We will discuss this topic in details later in this tutorial.
 
-TODO: Put the example with host pageable and then replace with pinned memory. Profile each and compare.
-
 #### 2.3.2. Zero-copy Memory
 
 [Zero-copy memory](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#zero-copy-memory) is a non-pageable 
@@ -447,7 +445,7 @@ Introduced in CUDA 4.0 and supported by devices with compute compatibility 2.0 a
 address space for both host and device. For systems without UVA support, pointers to host and device memory locations must be explicitly distinguished
 and specified by the programmer.
 
-![Figure 2]()
+![Figure 2](../fig/UVA.png)
 
 On the other hand, UVA unifies memory space addressing making the corresponding host and device pointers identical and accessible to the entire application.
 It might be instructive to explain in more detail how using UVA might be more convenient than working with pinned memory. For example, with zero-copy memory,
